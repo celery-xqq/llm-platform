@@ -1,0 +1,7 @@
+# 忽略 Python 字节码缓存目录
+__pycache__/
+
+# 忽略 Python 编译生成的 .pyc 、.pyo 、.pyd 文件（不同环境下的字节码文件）
+*.pyc
+*.pyo
+*.pyd
