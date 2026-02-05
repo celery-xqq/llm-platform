@@ -145,7 +145,7 @@ interface ChatMessage {
 interface LLMModel {
   id: string // 模型ID（传给后端的model_id）
   name: string // 模型名称（前端展示用）
-  status?: number // 可选：模型状态（1=启用，0=禁用）
+  is_active?: boolean // 可选：模型状态（true=启用，false=禁用）
 }
 
 /* ================= state ================= */
@@ -186,10 +186,10 @@ const loadMessages = async (conversationId: string) => {
 const loadModels = async () => {
   try {
     const modelList = await getModels()
-    // 修复2：兼容后端不返回status字段的情况（避免过滤掉所有模型）
+    // 兼容后端不返回is_active字段的情况（避免过滤掉所有模型）
     models.value = modelList.filter((model: LLMModel) => {
-      // 若后端返回status，只保留启用状态（status !== 0）；若不返回status，默认视为可用
-      return model.status === undefined || model.status !== 0
+      // 若后端返回is_active，只保留启用状态（is_active !== 0）；若不返回is_active，默认视为可用
+      return model.is_active === undefined || model.is_active !== false
     })
     // 自动选中第一个可用模型（非空断言已加，且有长度判断，安全）
     if (models.value.length > 0) {

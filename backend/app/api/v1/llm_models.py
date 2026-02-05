@@ -36,7 +36,7 @@ async def get_model(
 ):
     model = get_llm_model(db, model_id)
     if not model:
-        raise HTTPException(status_code=404, detail="模型不存在或已禁用")
+        raise HTTPException(status_code=404, detail="模型不存在")
     return model
 
 @router.get("/", response_model=list[LLMModelResponse])
@@ -58,7 +58,7 @@ async def update_model(
 ):
     model = update_llm_model(db, model_id, model_update)
     if not model:
-        raise HTTPException(status_code=404, detail="模型不存在或已禁用")
+        raise HTTPException(status_code=404, detail="模型不存在")
     return model
 
 @router.delete("/{model_id}")
@@ -69,5 +69,5 @@ async def delete_model(
 ):
     success = delete_llm_model(db, model_id)
     if not success:
-        raise HTTPException(status_code=404, detail="模型不存在或已禁用")
-    return {"success": True, "message": "模型已禁用"}
+        raise HTTPException(status_code=404, detail="模型不存在")
+    return {"success": True, "message": "模型已删除"}

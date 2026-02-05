@@ -23,7 +23,7 @@ def get_conversations(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    print("current_user:", current_user)
+    #print("current_user:", current_user)
     #return list_conversations(db, current_user.id)
     return list_conversations(db, current_user.get("id"))
 

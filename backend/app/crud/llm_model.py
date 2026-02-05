@@ -25,15 +25,18 @@ def create_llm_model(db: Session, model: LLMModelCreate) -> LLMModel:
 
 def get_llm_model(db: Session, model_id: str) -> LLMModel:
     """通过ID获取模型配置"""
-    return db.query(LLMModel).filter(LLMModel.id == model_id, LLMModel.is_active == True).first()
+    #return db.query(LLMModel).filter(LLMModel.id == model_id, LLMModel.is_active == True).first()
+    return db.query(LLMModel).filter(LLMModel.id == model_id).first()
 
 def get_llm_model_by_name(db: Session, name: str) -> LLMModel:
     """通过名称获取模型配置"""
-    return db.query(LLMModel).filter(LLMModel.name == name, LLMModel.is_active == True).first()
+    #return db.query(LLMModel).filter(LLMModel.name == name, LLMModel.is_active == True).first()
+    return db.query(LLMModel).filter(LLMModel.name == name).first()
 
 def get_all_llm_models(db: Session, skip: int = 0, limit: int = 100) -> list[LLMModel]:
-    """获取所有启用的模型配置"""
-    return db.query(LLMModel).filter(LLMModel.is_active == True).offset(skip).limit(limit).all()
+    """获取所有的模型配置"""
+    #return db.query(LLMModel).filter(LLMModel.is_active == True).offset(skip).limit(limit).all()
+    return db.query(LLMModel).offset(skip).limit(limit).all()
 
 def update_llm_model(db: Session, model_id: str, model_update: LLMModelUpdate) -> LLMModel:
     """更新模型配置"""
@@ -51,10 +54,11 @@ def update_llm_model(db: Session, model_id: str, model_update: LLMModelUpdate) -
     return db_model
 
 def delete_llm_model(db: Session, model_id: str) -> bool:
-    """删除模型（软删除：置为未启用）"""
+    """删除模型"""
     db_model = get_llm_model(db, model_id)
     if not db_model:
         return False
-    db_model.is_active = False
+    # 直接从数据库中删除（硬删除），不要软删除
+    db.delete(db_model)
     db.commit()
     return True
