@@ -13,7 +13,6 @@
           :key="conv.id"
           class="conversation-item"
           :class="{ active: conv.id === activeConversationId }"
-          @click="selectConversation(conv.id)"
         >
           <!-- 重命名状态：在列表项内行内编辑 -->
           <template v-if="renamingConversationId === conv.id">
@@ -28,11 +27,11 @@
             <el-button size="mini" @click.stop="cancelRename">取消</el-button>
           </template>
           <template v-else>
-            <span class="conv-title">{{ conv.title || '新对话' }}</span>
+            <span class="conv-title" @click.stop="selectConversation(conv.id)">{{ conv.title || '新对话' }}</span>
 
             <!-- 三点菜单：包含重命名、删除等操作 -->
-            <el-dropdown @command="handleDropdownCommand.bind(null, conv)">
-              <span class="more-btn" @click.stop>
+            <el-dropdown @command="(cmd: string) => handleDropdownCommand(conv, cmd)" trigger="click">
+              <span class="more-btn">
                 ⋯
               </span>
               <template #dropdown>
@@ -587,4 +586,3 @@ onMounted(async () => {
   width: 360px;
 }
 </style>
-
