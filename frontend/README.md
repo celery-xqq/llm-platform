@@ -7,5 +7,8 @@ Learn more about the recommended Project Setup and IDE Support in the [Vue Docs 
 # 进入前端目录：
 cd frontend
 
+# 安装依赖包
+npm install
+
 # 启动前端服务 (执行：)nvm use 
 npm run dev
