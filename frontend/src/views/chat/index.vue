@@ -15,13 +15,32 @@
           :class="{ active: conv.id === activeConversationId }"
           @click="selectConversation(conv.id)"
         >
-          <span class="conv-title">{{ conv.title || '新对话' }}</span>
-          <el-button
-            type="text"
-            size="small"
-            class="conv-delete"
-            @click.stop="confirmDelete(conv.id)"
-          >删除</el-button>
+          <!-- 重命名状态：在列表项内行内编辑 -->
+          <template v-if="renamingConversationId === conv.id">
+            <el-input
+              v-model="renamingTitleInput"
+              size="small"
+              class="rename-input"
+              @keyup.enter.stop="saveRename(conv.id)"
+              @keyup.esc.stop="cancelRename"
+            />
+            <el-button size="mini" type="primary" @click.stop="saveRename(conv.id)">保存</el-button>
+            <el-button size="mini" @click.stop="cancelRename">取消</el-button>
+          </template>
+          <template v-else>
+            <span class="conv-title">{{ conv.title || '新对话' }}</span>
+
+            <!-- 三点菜单：包含重命名、删除等操作 -->
+            <el-dropdown @command="handleDropdownCommand.bind(null, conv)">
+              <span class="more-btn" @click.stop>
+                ⋯
+              </span>
+              <template #dropdown>
+                <el-dropdown-item command="rename">重命名</el-dropdown-item>
+                <el-dropdown-item command="delete"><span style="color: #f56c6c">删除</span></el-dropdown-item>
+              </template>
+            </el-dropdown>
+          </template>
         </div>
       </div>
     </aside>
@@ -163,24 +182,6 @@ const loadMessages = async (conversationId: string) => {
     console.error('加载历史消息失败：', err)
   }
 }
-
-// // 新增：加载模型列表
-// const loadModels = async () => {
-//   try {
-//     const modelList = await getModels()
-//     // 过滤出启用状态的模型（如果后端返回status字段，无则直接使用全部）
-//     models.value = modelList.filter((model: LLMModel) => model.status !== 0)
-//     // 自动选中第一个可用模型
-//     if (models.value.length > 0) {
-//       modelId.value = models.value[0]!.id
-//     } else {
-//       ElMessage.warning('暂无可用的对话模型，请联系管理员配置')
-//     }
-//   } catch (err) {
-//     ElMessage.error('加载模型列表失败，请稍后重试')
-//     console.error('加载模型列表失败：', err)
-//   }
-// }
 
 // 新增：加载模型列表
 const loadModels = async () => {
@@ -338,6 +339,49 @@ const sendMessage = async () => {
   }
 }
 
+// 重命名相关（在列表内行内编辑）
+const renamingConversationId = ref<string | null>(null)
+const renamingTitleInput = ref<string>('')
+
+const handleDropdownCommand = (conv: Conversation, cmd: string) => {
+  if (cmd === 'rename') {
+    startRename(conv)
+  } else if (cmd === 'delete') {
+    confirmDelete(conv.id)
+  }
+}
+
+const startRename = (conv: Conversation) => {
+  renamingConversationId.value = conv.id
+  renamingTitleInput.value = conv.title || ''
+}
+
+const cancelRename = () => {
+  renamingConversationId.value = null
+  renamingTitleInput.value = ''
+}
+
+const saveRename = async (conversationId: string) => {
+  const newTitle = (renamingTitleInput.value || '').trim()
+  if (!newTitle) {
+    ElMessage.warning('标题不能为空')
+    return
+  }
+  try {
+    await updateConversationTitle(conversationId, newTitle)
+    // 本地更新并清理状态
+    const idx = conversations.value.findIndex(c => c.id === conversationId)
+    if (idx >= 0) conversations.value[idx]!.title = newTitle
+    renamingConversationId.value = null
+    renamingTitleInput.value = ''
+    ElMessage.success('重命名成功')
+    await loadConversations()
+  } catch (err) {
+    console.error('重命名失败：', err)
+    ElMessage.error('重命名失败，请稍后重试')
+  }
+}
+
 /* ================= lifecycle ================= */
 // 删除会话（前端操作）：带确认
 const confirmDelete = async (conversationId: string) => {
@@ -426,6 +470,25 @@ onMounted(async () => {
 .conversation-item .conv-delete {
   float: right;
   color: rgba(0,0,0,0.45);
+}
+
+.more-btn {
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(0,0,0,0.6);
+}
+.more-btn:hover {
+  background: rgba(0,0,0,0.03);
+}
+.conversation-item .rename-input {
+  width: calc(100% - 110px);
+  display: inline-block;
+  vertical-align: middle;
 }
 
 /* chat */
