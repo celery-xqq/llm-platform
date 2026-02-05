@@ -15,7 +15,13 @@
           :class="{ active: conv.id === activeConversationId }"
           @click="selectConversation(conv.id)"
         >
-          {{ conv.title || '新对话' }}
+          <span class="conv-title">{{ conv.title || '新对话' }}</span>
+          <el-button
+            type="text"
+            size="small"
+            class="conv-delete"
+            @click.stop="confirmDelete(conv.id)"
+          >删除</el-button>
         </div>
       </div>
     </aside>
@@ -95,12 +101,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { ElMessage } from 'element-plus' // 新增：引入Element Plus的消息提示组件
+import { ElMessage, ElMessageBox } from 'element-plus' // 新增：引入Element Plus的消息提示组件与确认框
 import {
   getConversations,
   getConversationMessages,
   sendChat,
-  updateConversationTitle // 新增：导入更新标题的接口
+  updateConversationTitle, // 新增：导入更新标题的接口
+  deleteConversation // 新增：导入删除会话的接口
 } from '@/api/chat'
 import { getModels } from '@/api/model' // 新增：引入获取模型列表的接口
 
@@ -332,6 +339,39 @@ const sendMessage = async () => {
 }
 
 /* ================= lifecycle ================= */
+// 删除会话（前端操作）：带确认
+const confirmDelete = async (conversationId: string) => {
+  try {
+    await ElMessageBox.confirm('确认删除该会话及其所有消息吗？此操作不可恢复。', '删除会话', {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    // 调用删除 API
+    await deleteConversation(conversationId)
+    ElMessage.success('会话已删除')
+
+    // 如果当前正在查看该会话，清空视图
+    if (activeConversationId.value === conversationId) {
+      activeConversationId.value = null
+      messages.value = []
+      editingTitle.value = false
+      titleInput.value = ''
+    }
+
+    // 刷新会话列表
+    await loadConversations()
+  } catch (err: any) {
+    // 用户取消会触发 reject，这里忽略取消错误
+    if (err === 'cancel' || (err && err.message && err.message.includes('cancel'))) {
+      return
+    }
+    console.error('删除会话失败：', err)
+    ElMessage.error('删除会话失败，请稍后重试')
+  }
+}
+
 onMounted(async () => {
   // 并行加载模型列表和会话列表，提升加载效率
   await Promise.all([
@@ -376,6 +416,16 @@ onMounted(async () => {
 .conversation-item.active {
   background: #409eff;
   color: white;
+}
+
+.conversation-item .conv-title {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.conversation-item .conv-delete {
+  float: right;
+  color: rgba(0,0,0,0.45);
 }
 
 /* chat */

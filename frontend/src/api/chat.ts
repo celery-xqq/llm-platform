@@ -83,3 +83,11 @@ export const updateConversationTitle = (conversationId: string, title: string) =
     data: { title } // 对应后端的 ConversationTitleUpdate 模型
   })
 }
+
+// 删除会话（对接后端 DELETE 接口）
+export const deleteConversation = (conversationId: string) => {
+  return request({
+    url: `/api/v1/conversations/${conversationId}`,
+    method: 'delete'
+  })
+}
