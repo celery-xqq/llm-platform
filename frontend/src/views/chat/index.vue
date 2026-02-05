@@ -1,195 +1,4 @@
 <!-- src/views/chat/index.vue -->
-<!-- <template>
-  <div class="chat-container">
-    <el-card class="chat-card">
-      <div class="model-select">
-        <el-select v-model="selectedModelId" placeholder="选择模型" style="width: 300px;">
-          <el-option
-            v-for="model in modelList"
-            :key="model.id"
-            :label="model.name"
-            :value="model.id"
-          />
-        </el-select>
-      </div>
-      <div class="chat-window" ref="chatWindow">
-        <div
-          v-for="(msg, index) in messages"
-          :key="index"
-          :class="['chat-message', msg.role]"
-        >
-          <div class="chat-bubble">{{ msg.content }}</div>
-        </div>
-        <div v-if="loading" class="chat-loading">助手正在输入...</div>
-      </div>
-      <div class="chat-input">
-        <el-input
-          type="textarea"
-          v-model="inputMessage"
-          :rows="2"
-          placeholder="请输入消息，按 Ctrl + Enter 发送"
-          @keyup.enter.ctrl.native="sendMessage"
-        />
-        <el-button
-          type="primary"
-          :loading="loading"
-          @click="sendMessage"
-          style="margin-left: 8px"
-        >
-          发送
-        </el-button>
-      </div>
-    </el-card>
-  </div>
-</template>
-
-<script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
-import { ElMessage } from 'element-plus'
-import { getModels } from '@/api/model'
-import { chatWithModel } from '@/api/chat'
-import type { Message } from '@/api/chat' // ✅ 这里改成 import type
-
-
-const modelList = ref<any[]>([])
-const selectedModelId = ref<string>('')
-
-// 聊天记录
-const messages = ref<Message[]>([])
-const inputMessage = ref('')
-const loading = ref(false)
-
-// 聊天窗口ref（滚动到底部用）
-const chatWindow = ref<HTMLDivElement | null>(null)
-
-// 加载模型列表
-const loadModels = async () => {
-  try {
-    const list = await getModels()
-    modelList.value = list
-    if (list.length > 0 && !selectedModelId.value) {
-      selectedModelId.value = list[0].id
-    }
-  } catch (err) {
-    console.error(err)
-    ElMessage.error('加载模型失败')
-  }
-}
-
-// 滚动到底部
-const scrollToBottom = () => {
-  nextTick(() => {
-    if (chatWindow.value) {
-      chatWindow.value.scrollTop = chatWindow.value.scrollHeight
-    }
-  })
-}
-
-// 发送消息
-const sendMessage = async () => {
-  const content = inputMessage.value.trim()
-  if (!content) return
-  if (!selectedModelId.value) {
-    ElMessage.warning('请先选择模型')
-    return
-  }
-
-  // 添加用户消息
-  messages.value.push({ role: 'user', content })
-  inputMessage.value = ''
-  scrollToBottom()
-  loading.value = true
-
-  try {
-    const res = await chatWithModel({
-      model_id: selectedModelId.value,
-      messages: [{ role: 'user', content }],
-      temperature: 0.7
-    })
-
-    if (res.success) {
-      messages.value.push({ role: 'assistant', content: res.content || '' })
-    } else {
-      messages.value.push({ role: 'assistant', content: `出错啦: ${res.error}` })
-    }
-  } catch (err: any) {
-    console.error(err)
-    messages.value.push({ role: 'assistant', content: `请求失败: ${err.message}` })
-  } finally {
-    loading.value = false
-    scrollToBottom()
-  }
-}
-
-onMounted(loadModels)
-</script>
-
-<style scoped>
-.chat-container {
-  padding: 20px;
-}
-
-.chat-card {
-  max-width: 800px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.model-select {
-  margin-bottom: 12px;
-}
-
-.chat-window {
-  flex: 1;
-  min-height: 400px;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
-  padding: 12px;
-  overflow-y: auto;
-  margin-bottom: 12px;
-  background-color: #f5f7fa;
-}
-
-.chat-message {
-  display: flex;
-  margin-bottom: 8px;
-}
-
-.chat-message.user {
-  justify-content: flex-end;
-}
-
-.chat-message.assistant {
-  justify-content: flex-start;
-}
-
-.chat-bubble {
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.chat-message.user .chat-bubble {
-  background-color: #409eff;
-  color: #fff;
-}
-
-.chat-loading {
-  font-style: italic;
-  color: #999;
-  margin-top: 4px;
-}
-
-.chat-input {
-  display: flex;
-  align-items: center;
-}
-</style> -->
-
-<!-- src/views/chat/index.vue -->
 <template>
   <div class="chat-page">
     <!-- 左侧会话栏 -->
@@ -230,6 +39,29 @@ onMounted(loadModels)
         </el-select>
       </div>
 
+        <!-- 对话标题：展示并支持编辑 -->
+        <div class="chat-header" v-if="activeConversationId !== null">
+          <template v-if="editingTitle">
+            <el-input
+              v-model="titleInput"
+              size="small"
+              class="title-input"
+              @keyup.enter="saveTitle"
+              @keyup.esc="cancelEdit"
+              placeholder="编辑会话标题"
+              clearable
+            />
+            <el-button size="small" type="primary" @click="saveTitle">保存</el-button>
+            <el-button size="small" @click="cancelEdit">取消</el-button>
+          </template>
+          <template v-else>
+            <div class="title-display">
+              <h3 class="title-text">{{ currentConversationTitle || '新对话' }}</h3>
+              <el-button type="text" size="small" @click="startEdit">编辑</el-button>
+            </div>
+          </template>
+        </div>
+
       <div class="message-list">
         <div
           v-for="msg in messages"
@@ -262,7 +94,7 @@ onMounted(loadModels)
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus' // 新增：引入Element Plus的消息提示组件
 import {
   getConversations,
@@ -296,6 +128,10 @@ const conversations = ref<Conversation[]>([])
 const activeConversationId = ref<string | null>(null)
 const messages = ref<ChatMessage[]>([])
 const input = ref('')
+
+// 可编辑标题相关
+const editingTitle = ref(false)
+const titleInput = ref('')
 
 // 修改：不再硬编码，初始化为空字符串，后续从接口获取
 const modelId = ref<string>('')
@@ -365,11 +201,64 @@ const loadModels = async () => {
 const createConversation = () => {
   activeConversationId.value = null
   messages.value = []
+  // 新对话时清空标题编辑状态
+  editingTitle.value = false
+  titleInput.value = ''
 }
 
 const selectConversation = async (id: string) => {
   activeConversationId.value = id
   await loadMessages(id)
+  // 同步当前会话标题到输入框（便于编辑）
+  const conv = conversations.value.find(c => c.id === id)
+  titleInput.value = conv ? conv.title : ''
+  editingTitle.value = false
+}
+
+// 计算当前会话标题（用于显示）
+const currentConversationTitle = computed(() => {
+  if (!activeConversationId.value) return ''
+  const conv = conversations.value.find(c => c.id === activeConversationId.value)
+  return conv ? conv.title : ''
+})
+
+const startEdit = () => {
+  if (!activeConversationId.value) {
+    ElMessage.warning('请先选择一个已有对话再编辑标题')
+    return
+  }
+  titleInput.value = currentConversationTitle.value || ''
+  editingTitle.value = true
+}
+
+const cancelEdit = () => {
+  editingTitle.value = false
+  titleInput.value = currentConversationTitle.value || ''
+}
+
+const saveTitle = async () => {
+  const id = activeConversationId.value
+  if (!id) {
+    ElMessage.warning('无效的会话，无法保存标题')
+    return
+  }
+  const newTitle = (titleInput.value || '').trim()
+  if (!newTitle) {
+    ElMessage.warning('标题不能为空')
+    return
+  }
+  try {
+    await updateConversationTitle(id, newTitle)
+    // 本地更新（立即生效），再刷新列表以确保一致性
+    const idx = conversations.value.findIndex(c => c.id === id)
+    if (idx >= 0) conversations.value[idx]!.title = newTitle
+    editingTitle.value = false
+    ElMessage.success('会话标题已保存')
+    await loadConversations()
+  } catch (err) {
+    ElMessage.error('保存标题失败，请稍后重试')
+    console.error('保存标题失败：', err)
+  }
 }
 
 const sendMessage = async () => {
@@ -561,6 +450,28 @@ onMounted(async () => {
 
 .input-area el-input {
   flex: 1;
+}
+
+/* 对话标题样式 */
+.chat-header {
+  padding: 12px 20px;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.title-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-text {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.title-input {
+  width: 360px;
 }
 </style>
 
