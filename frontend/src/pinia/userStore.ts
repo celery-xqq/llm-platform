@@ -14,7 +14,7 @@ export const useUserStore = defineStore('user', () => {
     is_admin: Cookies.get('is_admin') === 'true' || false // 从Cookie读取，默认false
   })
 
-  // 登录
+  // 登录操作：调用后端登录接口，成功后更新状态和Cookie
   const loginAction = async (username: string, password: string) => {
     try {
       const res = await login({ username, password })
