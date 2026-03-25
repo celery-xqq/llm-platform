@@ -28,6 +28,20 @@ class DynamicLLMAdapter:
             return normalized_url
         else:
             return base_url
+        
+    # 清除缓存
+    def clear_cache(self, model_id: str = None):
+        """
+        清除客户端缓存
+        :param model_id: 可选，指定要清除的模型ID，不指定则清除所有缓存
+        """
+        if model_id:
+            if model_id in self.client_cache:
+                del self.client_cache[model_id]
+                print(f"Cleared cache for model: {model_id}")
+        else:
+            self.client_cache.clear()
+            print("Cleared all client caches")
 
     def _create_client(self, model_config: Dict) -> Union[AsyncOpenAI, OpenAI]:
         print("Creating client:", model_config["name"], model_config.get("model_key"))
@@ -90,9 +104,13 @@ class DynamicLLMAdapter:
                 }
             )
         except Exception as e:
+            # import traceback
+            # error_details = f"Connection error: {str(e)}\n{traceback.format_exc()}"
+            # print(f"Error details: {error_details}")
             return ChatResponse(
                 success=False,
                 model_id=chat_request.model_id,
                 model_name=model_config.get("name", ""),
                 error=str(e)
+                #error=error_details
             )

@@ -57,6 +57,11 @@ async def update_model(
     current_user: str = Depends(get_current_admin)
 ):
     model = update_llm_model(db, model_id, model_update)
+
+    # 清除缓存
+    from app.api.v1.chat import dynamic_adapter
+    dynamic_adapter.clear_cache(model_id)
+
     if not model:
         raise HTTPException(status_code=404, detail="模型不存在")
     return model
