@@ -1,7 +1,8 @@
 # 进入后端目录：
 cd backend
 # 安装依赖：
-pip install -r requirements.txt
+# pip install -r requirements.txt
+pip3 install -r requirements.txt
 
 # 加载环境变量：
 source ./setenv.sh
